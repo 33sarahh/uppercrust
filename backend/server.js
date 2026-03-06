@@ -65,8 +65,8 @@ const requireAuth = (req, res, next) => {
     }
 };
 
-// Initialize database
-const dbPath = path.join(__dirname, 'orders.db');
+// Initialize database (use DATABASE_PATH for Railway Volume or custom path)
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'orders.db');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error opening database:', err.message);
