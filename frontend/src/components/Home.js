@@ -41,7 +41,7 @@ function Home() {
             className="hero-image grain-overlay" 
           />
           <div className="hero-button-overlay">
-            <Link to="/register" className="cta-button hero-cta">knead a loaf?</Link>
+            <Link to={user ? "/order" : "/register"} className="cta-button hero-cta">knead a loaf?</Link>
           </div>
         </div>
       </section>

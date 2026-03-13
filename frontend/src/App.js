@@ -9,7 +9,7 @@ import Dashboard from './components/Dashboard';
 import Admin from './components/Admin';
 import './styles/index.css';
 
-// Protected Route component
+// Protected Route component – requires user to be signed in
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
@@ -20,12 +20,23 @@ const ProtectedRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" replace />;
 };
 
+// Guest-only route – redirects signed-in users away from auth pages
+const GuestOnlyRoute = ({ children, redirectTo = '/dashboard' }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="container"><div className="loading">Loading...</div></div>;
+  }
+  
+  return user ? <Navigate to={redirectTo} replace /> : children;
+};
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
+      <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
       <Route 
         path="/order" 
         element={
