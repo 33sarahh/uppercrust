@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const bcrypt = require('bcryptjs');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
@@ -73,7 +74,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     } else {
         console.log('Connected to SQLite database');
         
-        // Create users table
+        // Create users table (password added for email+password auth)
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             firstName TEXT NOT NULL,
@@ -81,6 +82,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             apartment TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             phone TEXT NOT NULL,
+            passwordHash TEXT,
             avatar TEXT DEFAULT '/images/profile_bread.jpg',
             createdAt TEXT NOT NULL
         )`, (err) => {
@@ -88,6 +90,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 console.error('Error creating users table:', err.message);
             } else {
                 console.log('Users table ready');
+                // Migration: add passwordHash column if missing (existing DBs)
+                db.all("PRAGMA table_info(users)", (err, cols) => {
+                    if (err) return;
+                    const hasPassword = cols && cols.some(c => c.name === 'passwordHash');
+                    if (!hasPassword) {
+                        db.run('ALTER TABLE users ADD COLUMN passwordHash TEXT', (err) => {
+                            if (err) console.error('Migration add passwordHash:', err.message);
+                            else console.log('Users table: passwordHash column added');
+                        });
+                    }
+                });
             }
         });
         
@@ -188,13 +201,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
 // ========== Authentication Routes ==========
 
-// Register new user
+// Register new user (email, password, then firstName, lastName, apartment, phone)
 app.post('/api/auth/register', (req, res) => {
-    const { firstName, lastName, apartment, email, phone } = req.body;
+    const { firstName, lastName, apartment, email, phone, password } = req.body;
     
     // Validation
-    if (!firstName || !lastName || !apartment || !email || !phone) {
+    if (!firstName || !lastName || !apartment || !email || !phone || !password) {
         return res.status(400).json({ error: 'All fields are required' });
+    }
+    
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     
     // Validate apartment (exactly 4 digits)
@@ -209,66 +226,71 @@ app.post('/api/auth/register', (req, res) => {
     }
     
     const createdAt = new Date().toISOString();
-    const avatar = '/images/profile_bread.jpg'; // Fixed avatar
+    const avatar = '/images/profile_bread.jpg';
     
-    // Check if email already exists
-    db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
+    bcrypt.hash(password, 10, (err, passwordHash) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        if (row) {
-            return res.status(400).json({ error: 'Email already registered' });
+            return res.status(500).json({ error: 'Failed to create account' });
         }
         
-        // Create user
-        db.run(
-            `INSERT INTO users (firstName, lastName, apartment, email, phone, avatar, createdAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [firstName, lastName, apartment, email, phone, avatar, createdAt],
-            function(err) {
-                if (err) {
-                    return res.status(500).json({ error: err.message });
-                }
-                
-                // Set session
-                req.session.userId = this.lastID;
-                
-                // Return user data
-                res.status(201).json({
-                    id: this.lastID,
-                    firstName,
-                    lastName,
-                    apartment,
-                    email,
-                    phone,
-                    avatar
-                });
-            }
-        );
-    });
-});
-
-// Login (using email and apartment as credentials)
-app.post('/api/auth/login', (req, res) => {
-    const { email, apartment } = req.body;
-    
-    if (!email || !apartment) {
-        return res.status(400).json({ error: 'Email and apartment number are required' });
-    }
-    
-    db.get(
-        'SELECT * FROM users WHERE email = ? AND apartment = ?',
-        [email, apartment],
-        (err, user) => {
+        // Check if email already exists
+        db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
-            if (!user) {
-                return res.status(401).json({ error: 'Invalid email or apartment number' });
+            if (row) {
+                return res.status(400).json({ error: 'Email already registered' });
+            }
+            
+            db.run(
+                `INSERT INTO users (firstName, lastName, apartment, email, phone, passwordHash, avatar, createdAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [firstName, lastName, apartment, email, phone, passwordHash, avatar, createdAt],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+                    req.session.userId = this.lastID;
+                    res.status(201).json({
+                        id: this.lastID,
+                        firstName,
+                        lastName,
+                        apartment,
+                        email,
+                        phone,
+                        avatar
+                    });
+                }
+            );
+        });
+    });
+});
+
+// Login (email + password)
+app.post('/api/auth/login', (req, res) => {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (!user || !user.passwordHash) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+        
+        bcrypt.compare(password, user.passwordHash, (err, match) => {
+            if (err) {
+                return res.status(500).json({ error: 'Login failed' });
+            }
+            if (!match) {
+                return res.status(401).json({ error: 'Invalid email or password' });
             }
             
             req.session.userId = user.id;
-            
             res.json({
                 id: user.id,
                 firstName: user.firstName,
@@ -278,8 +300,8 @@ app.post('/api/auth/login', (req, res) => {
                 phone: user.phone,
                 avatar: user.avatar
             });
-        }
-    );
+        });
+    });
 });
 
 // Logout

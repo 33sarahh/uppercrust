@@ -8,7 +8,7 @@ function Login() {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
-    apartment: '',
+    password: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -31,14 +31,6 @@ function Login() {
     setError('');
   };
 
-  const handleApartmentInput = (e) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setFormData(prev => ({
-      ...prev,
-      apartment: value
-    }));
-  };
-
   const validate = () => {
     const newErrors = {};
 
@@ -48,10 +40,8 @@ function Login() {
       newErrors.email = 'Invalid email format';
     }
 
-    if (!formData.apartment) {
-      newErrors.apartment = 'Apartment number is required';
-    } else if (!/^\d{4}$/.test(formData.apartment)) {
-      newErrors.apartment = 'Apartment number must be exactly 4 digits';
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
     }
 
     setErrors(newErrors);
@@ -67,7 +57,7 @@ function Login() {
     }
 
     setLoading(true);
-    const result = await login(formData.email, formData.apartment);
+    const result = await login(formData.email, formData.password);
 
     if (result.success) {
       navigate(from, { replace: true });
@@ -108,21 +98,17 @@ function Login() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="apartment">Apartment Number *</label>
+              <label htmlFor="password">Password *</label>
               <input
-                type="text"
-                id="apartment"
-                name="apartment"
-                value={formData.apartment}
-                onChange={handleApartmentInput}
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
                 required
-                placeholder="4 digits"
-                maxLength="4"
-                pattern="[0-9]{4}"
-                className={errors.apartment ? 'error' : ''}
+                className={errors.password ? 'error' : ''}
               />
-              {errors.apartment && <span className="field-error">{errors.apartment}</span>}
-              <small className="form-hint">4-digit apartment number</small>
+              {errors.password && <span className="field-error">{errors.password}</span>}
             </div>
 
             <button type="submit" className="submit-button" disabled={loading}>

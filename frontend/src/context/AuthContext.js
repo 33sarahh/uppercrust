@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, apartment) => {
+  const login = async (email, password) => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, apartment }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {

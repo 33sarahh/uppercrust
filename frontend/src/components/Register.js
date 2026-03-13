@@ -2,14 +2,19 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const STEP_ONE = 1;
+const STEP_TWO = 2;
+
 function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const [step, setStep] = useState(STEP_ONE);
   const [formData, setFormData] = useState({
+    email: '',
+    password: '',
     firstName: '',
     lastName: '',
     apartment: '',
-    email: '',
     phone: '',
   });
   const [errors, setErrors] = useState({});
@@ -56,46 +61,61 @@ function Register() {
     }));
   };
 
-  const validate = () => {
+  const validateStepOne = () => {
     const newErrors = {};
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-
-    if (!formData.apartment) {
-      newErrors.apartment = 'Apartment number is required';
-    } else if (!/^\d{4}$/.test(formData.apartment)) {
-      newErrors.apartment = 'Apartment number must be exactly 4 digits';
-    }
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
+  const validateStepTwo = () => {
+    const newErrors = {};
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    if (!formData.apartment) {
+      newErrors.apartment = 'Apartment number is required';
+    } else if (!/^\d{4}$/.test(formData.apartment)) {
+      newErrors.apartment = 'Apartment number must be exactly 4 digits';
+    }
     if (!formData.phone) {
       newErrors.phone = 'Phone number is required';
     } else if (formData.phone.replace(/\D/g, '').length < 10) {
       newErrors.phone = 'Invalid phone number';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleStepOneSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    if (!validateStepOne()) return;
+    setStep(STEP_TWO);
+  };
+
+  const handleStepTwoBack = () => {
+    setErrors({});
+    setError('');
+    setStep(STEP_ONE);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!validate()) {
-      return;
-    }
+    if (!validateStepTwo()) return;
 
     setLoading(true);
     const result = await register(formData);
@@ -118,91 +138,125 @@ function Register() {
       
       <main className="auth-main">
         <div className="auth-container">
-          <h2 className="auth-title">Create Your Profile</h2>
-          <p className="auth-subtitle">Join the upper crust community</p>
+          <h2 className="auth-title">
+            {step === STEP_ONE ? 'Create Your Account' : 'Almost There'}
+          </h2>
+          <p className="auth-subtitle">
+            {step === STEP_ONE ? 'Enter your email and choose a password' : 'Tell us a bit about yourself'}
+          </p>
           
           {error && <div className="error-message">{error}</div>}
           
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="firstName">First Name *</label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                required
-                className={errors.firstName ? 'error' : ''}
-              />
-              {errors.firstName && <span className="field-error">{errors.firstName}</span>}
-            </div>
+          {step === STEP_ONE ? (
+            <form onSubmit={handleStepOneSubmit} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="email">Email *</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className={errors.email ? 'error' : ''}
+                />
+                {errors.email && <span className="field-error">{errors.email}</span>}
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="lastName">Last Name *</label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                required
-                className={errors.lastName ? 'error' : ''}
-              />
-              {errors.lastName && <span className="field-error">{errors.lastName}</span>}
-            </div>
+              <div className="form-group">
+                <label htmlFor="password">Password *</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  minLength={6}
+                  placeholder="At least 6 characters"
+                  className={errors.password ? 'error' : ''}
+                />
+                {errors.password && <span className="field-error">{errors.password}</span>}
+                <small className="form-hint">At least 6 characters</small>
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="apartment">Apartment Number *</label>
-              <input
-                type="text"
-                id="apartment"
-                name="apartment"
-                value={formData.apartment}
-                onChange={handleApartmentInput}
-                required
-                placeholder="4 digits"
-                maxLength="4"
-                pattern="[0-9]{4}"
-                className={errors.apartment ? 'error' : ''}
-              />
-              {errors.apartment && <span className="field-error">{errors.apartment}</span>}
-              <small className="form-hint">4-digit apartment number</small>
-            </div>
+              <button type="submit" className="submit-button">
+                Continue
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="firstName">First Name *</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  required
+                  className={errors.firstName ? 'error' : ''}
+                />
+                {errors.firstName && <span className="field-error">{errors.firstName}</span>}
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="email">Email *</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className={errors.email ? 'error' : ''}
-              />
-              {errors.email && <span className="field-error">{errors.email}</span>}
-            </div>
+              <div className="form-group">
+                <label htmlFor="lastName">Last Name *</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  required
+                  className={errors.lastName ? 'error' : ''}
+                />
+                {errors.lastName && <span className="field-error">{errors.lastName}</span>}
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="phone">Phone Number *</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handlePhoneInput}
-                required
-                placeholder="(555) 123-4567"
-                className={errors.phone ? 'error' : ''}
-              />
-              {errors.phone && <span className="field-error">{errors.phone}</span>}
-            </div>
+              <div className="form-group">
+                <label htmlFor="apartment">Apartment Number *</label>
+                <input
+                  type="text"
+                  id="apartment"
+                  name="apartment"
+                  value={formData.apartment}
+                  onChange={handleApartmentInput}
+                  required
+                  placeholder="4 digits"
+                  maxLength="4"
+                  pattern="[0-9]{4}"
+                  className={errors.apartment ? 'error' : ''}
+                />
+                {errors.apartment && <span className="field-error">{errors.apartment}</span>}
+                <small className="form-hint">4-digit apartment number</small>
+              </div>
 
-            <button type="submit" className="submit-button" disabled={loading}>
-              {loading ? 'Creating Profile...' : 'Create Profile'}
-            </button>
-          </form>
+              <div className="form-group">
+                <label htmlFor="phone">Phone Number *</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handlePhoneInput}
+                  required
+                  placeholder="(555) 123-4567"
+                  className={errors.phone ? 'error' : ''}
+                />
+                {errors.phone && <span className="field-error">{errors.phone}</span>}
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="submit-button secondary" onClick={handleStepTwoBack} disabled={loading}>
+                  Back
+                </button>
+                <button type="submit" className="submit-button" disabled={loading}>
+                  {loading ? 'Creating Profile...' : 'Create Profile'}
+                </button>
+              </div>
+            </form>
+          )}
 
           <p className="auth-footer">
             Already have an account? <Link to="/login">Sign in</Link>

@@ -654,6 +654,27 @@ header {
     cursor: not-allowed;
 }
 
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.form-actions .submit-button {
+    flex: 1;
+}
+
+.submit-button.secondary {
+    background-color: transparent;
+    color: var(--rustic-brown);
+    border: 2px solid var(--rustic-brown);
+    box-shadow: none;
+}
+
+.submit-button.secondary:hover {
+    background-color: rgba(139, 115, 85, 0.08);
+}
+
 /* Order Confirmation */
 .order-confirmation {
     padding: 3rem;

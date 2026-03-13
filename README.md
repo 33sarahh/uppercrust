@@ -4,7 +4,7 @@ A beautiful web application for ordering fresh ciabatta bread, delivered weekly 
 
 ## Features
 
-- **User Authentication**: Register and login with email and apartment number
+- **User Authentication**: Register and login with email and password
 - **Order Management**: Place orders for fresh bread with quantity selection and special notes
 - **Weekly Delivery**: Automatic Monday delivery scheduling with Saturday 5pm CST cutoff
 - **Order History**: View all your past orders in your dashboard
@@ -96,7 +96,7 @@ SESSION_SECRET=your-secret-key-here
 
 ### Authentication
 - `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login with email and apartment
+- `POST /api/auth/login` - Login with email and password
 - `POST /api/auth/logout` - Logout
 - `GET /api/auth/me` - Get current user
 
