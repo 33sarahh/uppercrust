@@ -206,6 +206,13 @@ body {
     box-shadow: 0 6px 20px rgba(139, 115, 85, 0.4);
 }
 
+/* Large primary CTA for dashboard "Place Order" */
+.cta-button--large {
+    font-size: 1.5rem;
+    padding: 1.25rem 3rem;
+    text-transform: none;
+}
+
 /* Jam Section - Layered Images */
 .jam-section {
     padding: 4rem 0;
@@ -323,6 +330,55 @@ header {
     text-align: center;
     border-bottom: 1px solid var(--warm-beige);
     margin-bottom: 2rem;
+}
+
+/* Dashboard: header with logo left, user menu right */
+.dashboard-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dashboard-page-header .logo-link {
+    flex-shrink: 0;
+}
+
+.header-user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--rustic-brown);
+}
+
+.header-user-name {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.header-logout {
+    padding: 0.4rem 1rem;
+    background: none;
+    border: none;
+    color: var(--rustic-brown);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.header-logout:hover {
+    color: var(--dark-brown);
 }
 
 .logo-link {
@@ -944,6 +1000,20 @@ footer {
 .dashboard-main {
     min-height: calc(100vh - 200px);
     padding: 2rem 0;
+}
+
+/* Single focused card for first-time users (no orders yet) */
+.dashboard-welcome-card {
+    background-color: var(--warm-beige);
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.welcome-empty-message {
+    font-size: 1.2rem;
+    color: var(--text-light);
+    margin: 0 0 1.5rem 0;
 }
 
 .dashboard-header {

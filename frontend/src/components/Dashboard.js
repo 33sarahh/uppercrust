@@ -127,60 +127,54 @@ function Dashboard() {
 
   return (
     <div className="container">
-      <header>
+      <header className="dashboard-page-header">
         <Link to="/" className="logo-link">
           <h1 className="logo">the upper crust</h1>
         </Link>
-        <div className="header-actions">
-          <button onClick={handleLogout} className="logout-button">Log Out</button>
+        <div className="header-user-menu">
+          <img
+            src={getImagePath('profile_bread.jpg')}
+            alt=""
+            className="header-user-avatar"
+          />
+          <span className="header-user-name">Welcome, {user?.firstName}</span>
+          <button onClick={handleLogout} className="header-logout">Log out</button>
         </div>
       </header>
 
       <main className="dashboard-main">
-        <div className="dashboard-header">
-          <div className="user-profile">
-            <img 
-              src={getImagePath('profile_bread.jpg')} 
-              alt="Profile" 
-              className="user-avatar"
-            />
-            <div className="user-info">
-              <h2>Welcome, {user?.firstName}!</h2>
-              <p>{user?.email} • Apt {user?.apartment}</p>
-            </div>
+        {orders.length === 0 ? (
+          /* First-time user: one focused card, no tabs */
+          <div className="dashboard-welcome-card">
+            <p className="welcome-empty-message">You haven't placed any orders yet.</p>
+            <Link to="/order" className="cta-button cta-button--large">Place Your First Order</Link>
           </div>
-        </div>
-
-        <div className="dashboard-tabs">
-          <button
-            className={`tab-button ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
-          >
-            My Orders
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'review' ? 'active' : ''}`}
-            onClick={() => setActiveTab('review')}
-          >
-            Write a Review
-          </button>
-        </div>
-
-        {activeTab === 'orders' && (
-          <div className="dashboard-content">
-            <div className="dashboard-actions">
-              <Link to="/order" className="cta-button">
-                Start New Order
-              </Link>
+        ) : (
+          <>
+            <div className="dashboard-tabs">
+              <button
+                className={`tab-button ${activeTab === 'orders' ? 'active' : ''}`}
+                onClick={() => setActiveTab('orders')}
+              >
+                My Orders
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'review' ? 'active' : ''}`}
+                onClick={() => setActiveTab('review')}
+              >
+                Write a Review
+              </button>
             </div>
 
-            {orders.length === 0 ? (
-              <div className="empty-state">
-                <p>You haven't placed any orders yet.</p>
-                <Link to="/order" className="cta-button">Place Your First Order</Link>
-              </div>
-            ) : (
-              <div className="orders-list">
+            {activeTab === 'orders' && (
+              <div className="dashboard-content">
+                <div className="dashboard-actions">
+                  <Link to="/order" className="cta-button cta-button--large">
+                    Place Order
+                  </Link>
+                </div>
+
+                <div className="orders-list">
                 {orders.map(order => (
                   <div key={order.id} className="order-card">
                     <div className="order-header">
@@ -228,91 +222,92 @@ function Dashboard() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             )}
-          </div>
-        )}
 
-        {activeTab === 'review' && (
-          <div className="dashboard-content">
-            {!showReviewForm ? (
-              <div className="review-section">
-                <h3>Your Reviews</h3>
-                {reviews.length === 0 ? (
-                  <p className="no-reviews">You haven't written any reviews yet.</p>
-                ) : (
-                  <div className="reviews-list">
-                    {reviews.map(review => (
-                      <div key={review.id} className="review-card">
-                        <div className="review-rating">
-                          {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                        </div>
-                        {review.text && <p className="review-text">{review.text}</p>}
-                        <p className="review-date">{formatDate(review.createdAt)}</p>
+            {activeTab === 'review' && (
+              <div className="dashboard-content">
+                {!showReviewForm ? (
+                  <div className="review-section">
+                    <h3>Your Reviews</h3>
+                    {reviews.length === 0 ? (
+                      <p className="no-reviews">You haven't written any reviews yet.</p>
+                    ) : (
+                      <div className="reviews-list">
+                        {reviews.map(review => (
+                          <div key={review.id} className="review-card">
+                            <div className="review-rating">
+                              {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                            </div>
+                            {review.text && <p className="review-text">{review.text}</p>}
+                            <p className="review-date">{formatDate(review.createdAt)}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                    <button
+                      onClick={() => setShowReviewForm(true)}
+                      className="cta-button"
+                    >
+                      Write a Review
+                    </button>
+                  </div>
+                ) : (
+                  <div className="review-form-section">
+                    <h3>Write a Review</h3>
+                    {reviewError && <div className="error-message">{reviewError}</div>}
+                    <form onSubmit={handleReviewSubmit} className="review-form">
+                      <div className="form-group">
+                        <label>Rating *</label>
+                        <div className="rating-selector">
+                          {[1, 2, 3, 4, 5].map(rating => (
+                            <button
+                              key={rating}
+                              type="button"
+                              className={`rating-star ${reviewData.rating >= rating ? 'selected' : ''}`}
+                              onClick={() => setReviewData(prev => ({ ...prev, rating }))}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                        <small className="form-hint">Click stars to rate (1-5)</small>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="reviewText">Your Review</label>
+                        <textarea
+                          id="reviewText"
+                          rows="5"
+                          value={reviewData.text}
+                          onChange={(e) => setReviewData(prev => ({ ...prev, text: e.target.value }))}
+                          placeholder="Share your experience with the upper crust..."
+                        />
+                      </div>
+
+                      <div className="form-actions">
+                        <button type="submit" className="submit-button">
+                          Submit Review
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowReviewForm(false);
+                            setReviewData({ rating: 5, text: '' });
+                            setReviewError('');
+                          }}
+                          className="cancel-button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 )}
-                <button
-                  onClick={() => setShowReviewForm(true)}
-                  className="cta-button"
-                >
-                  Write a Review
-                </button>
-              </div>
-            ) : (
-              <div className="review-form-section">
-                <h3>Write a Review</h3>
-                {reviewError && <div className="error-message">{reviewError}</div>}
-                <form onSubmit={handleReviewSubmit} className="review-form">
-                  <div className="form-group">
-                    <label>Rating *</label>
-                    <div className="rating-selector">
-                      {[1, 2, 3, 4, 5].map(rating => (
-                        <button
-                          key={rating}
-                          type="button"
-                          className={`rating-star ${reviewData.rating >= rating ? 'selected' : ''}`}
-                          onClick={() => setReviewData(prev => ({ ...prev, rating }))}
-                        >
-                          ★
-                        </button>
-                      ))}
-                    </div>
-                    <small className="form-hint">Click stars to rate (1-5)</small>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="reviewText">Your Review</label>
-                    <textarea
-                      id="reviewText"
-                      rows="5"
-                      value={reviewData.text}
-                      onChange={(e) => setReviewData(prev => ({ ...prev, text: e.target.value }))}
-                      placeholder="Share your experience with the upper crust..."
-                    />
-                  </div>
-
-                  <div className="form-actions">
-                    <button type="submit" className="submit-button">
-                      Submit Review
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowReviewForm(false);
-                        setReviewData({ rating: 5, text: '' });
-                        setReviewError('');
-                      }}
-                      className="cancel-button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
 
